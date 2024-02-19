@@ -1,82 +1,106 @@
-import { useState } from "react";
-import "./App.css";
+import { useEffect, useState } from "react";
 
-export default function App() {
+const boxStyle = { display: "flex", gap: "1em", flexDirection: "col" };
+
+/*
+fetch(`https://api.frankfurter.app/latest?amount=10&from=GBP&to=USD`)
+  .then(resp => resp.json())
+  .then((data) => {
+    alert(`10 GBP = ${data.rates.USD} USD`);
+  });
+*/
+
+function App() {
+  const [number, setNumber] = useState(1);
+  const [convertFrom, setConvertFrom] = useState("USD");
+  const [convertTo, setConvertTo] = useState("INR");
+  const [ans, setAns] = useState();
+  const [isLoading, setIsLoading] = useState(false);
+  function handleAmountChange(e) {
+    const value = e.target.value;
+    setNumber(value);
+    // console.log(value);
+  }
+
+  function handleConvertFrom(e) {
+    const value = e.target.value;
+    console.log(value);
+    setConvertFrom(value);
+  }
+  function handleConvertTo(e) {
+    const value = e.target.value;
+    console.log(value);
+    setConvertTo(value);
+  }
+
+  useEffect(
+    function () {
+      const abortController = new AbortController();
+      setIsLoading(true);
+      // console.log(number, "number");
+      // console.log(convertFrom, "convertFrom");
+      // console.log(convertTo, "convertTo");
+      if (
+        !convertFrom ||
+        !convertTo ||
+        number == 0 ||
+        convertFrom == convertTo
+      ) {
+        setAns("");
+        return;
+      }
+      fetch(
+        `https://api.frankfurter.app/latest?amount=${number}&from=${convertFrom}&to=${convertTo}`,
+        { signal: abortController.signal }
+      )
+        .then((resp) => resp.json())
+        .then((data) => {
+          console.log(data);
+          console.log(data.rates[`${convertTo}`]);
+          setAns(data.rates[`${convertTo}`]);
+          setIsLoading(false);
+          // alert(`10 GBP = ${data.rates.USD} USD`);
+        })
+        .catch((error) => {
+          if (error.name == "abortError") {
+            console.log(error);
+          }
+        });
+      return () => {
+        // abortController.abort();
+      };
+    },
+    [number, convertFrom, convertTo]
+  );
+
   return (
     <div>
-      <TextExpander>
-        Space travel is the ultimate adventure! Imagine soaring past the stars
-        and exploring new worlds. It's the stuff of dreams and science fiction,
-        but believe it or not, space travel is a real thing. Humans and robots
-        are constantly venturing out into the cosmos to uncover its secrets and
-        push the boundaries of what's possible.
-      </TextExpander>
-
-      <TextExpander
-        collapsedNumWords={20}
-        expandButtonText="Show text"
-        collapseButtonText="Collapse text"
-        buttonColor="#ff6622"
-      >
-        Space travel requires some seriously amazing technology and
-        collaboration between countries, private companies, and international
-        space organizations. And while it's not always easy (or cheap), the
-        results are out of this world. Think about the first time humans stepped
-        foot on the moon or when rovers were sent to roam around on Mars.
-      </TextExpander>
-
-      <TextExpander expanded={true} className="box">
-        Space missions have given us incredible insights into our universe and
-        have inspired future generations to keep reaching for the stars. Space
-        travel is a pretty cool thing to think about. Who knows what we'll
-        discover next!
-      </TextExpander>
+      <div style={boxStyle}>
+        <input
+          type="number"
+          value={number}
+          placeholder="Enter the number..."
+          onChange={handleAmountChange}
+          disabled={isLoading}
+        />
+        <select onChange={handleConvertFrom}>
+          <option>USD</option>
+          <option>AUD</option>
+          <option>INR</option>
+          <option>GBP</option>
+        </select>
+        <select onChange={handleConvertTo}>
+          <option>INR</option>
+          <option>USD</option>
+          <option>AUD</option>
+          <option>GBP</option>
+        </select>
+      </div>
+      <div>
+        <p>OUTPUT</p>
+        <p>{ans}</p>
+      </div>
     </div>
   );
 }
-
-function TextExpander({
-  className = "",
-  collapsedNumWords = 10,
-  children,
-  expandButtonText,
-  collapseButtonText,
-  expanded = true,
-  buttonColor = "red",
-}) {
-  const [showWords, setShowWords] = useState(expanded);
-
-  const wordStyle = { marginRight: "4px" };
-
-  const arrOfWords = children.split(" ");
-  console.log(arrOfWords);
-  return (
-    <div className={className}>
-      {showWords
-        ? children
-        : arrOfWords.slice(0, collapsedNumWords).join(" ") + "..."}
-      <Button
-        onClick={() => setShowWords(!showWords)}
-        buttonColor={buttonColor}
-      >
-        {showWords ? collapseButtonText : expandButtonText}
-      </Button>
-    </div>
-  );
-}
-
-function Button({ buttonColor, onClick, children }) {
-  return (
-    <button
-      style={{
-        color: buttonColor,
-        backgroundColor: "transparent",
-        border: "none",
-        cursor: "pointer",
-      }}
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  );
-}
+export default App;
